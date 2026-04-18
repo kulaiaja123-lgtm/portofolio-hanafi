@@ -1,7 +1,7 @@
 // js/supabase-client.js - FIXED VERSION (tanpa folder public)
 // GANTI DENGAN DATA DARI SUPABASE DASHBOARD KAMU!
-const SUPABASE_URL = 'https://zxcucuxsjahumskogxsv.supabase.co';  // ← GANTI! pastikan "supabase" bukan "subabase"
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4Y3VjdXhzamFodW1za29neHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzEyNTksImV4cCI6MjA5MjEwNzI1OX0.sZhTkwiX3WLzKsL4kdXuBcO1bZ1e9f4kLIV6xfBzGvw'; // ← GANTI!
+const SUPABASE_URL = 'https://tsgplaxmwasopyukhixu.supabase.co';  // ← GANTI! pastikan "supabase" bukan "subabase"
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzZ3BsYXhtd2Fzb3B5dWtoaXh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzI5NjQsImV4cCI6MjA5MjEwODk2NH0.nyhBvtAARX6nbFpB8vtqsITVWJZS3OnkSCnPIoQkDTM'; // ← GANTI!
 
 // Buat client
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
