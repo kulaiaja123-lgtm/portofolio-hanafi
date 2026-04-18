@@ -3,57 +3,59 @@
    Image upload, save data, edit modal
 ════════════════════════════════════════════ */
 
-// Image upload handler
-function uploadImg(type, idx) {
+// Image upload handler - VERSION WITH SUPABASE
+async function uploadImg(type, idx) {
   if (!isAdmin) return;
 
   const inp = document.createElement('input');
   inp.type = 'file';
   inp.accept = 'image/*';
 
-  inp.onchange = e => {
+  inp.onchange = async e => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = ev => {
-      const img = new Image();
-      img.onload = () => {
-        const c = document.createElement('canvas');
-        const r = Math.min(1, 900 / img.width);
-        c.width = img.width * r;
-        c.height = img.height * r;
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        const data = c.toDataURL('image/jpeg', 0.82);
-
+    // Tampilkan loading
+    const btn = document.querySelector('.img-upload-overlay');
+    if (btn) btn.innerHTML = '<div class="uo-icon">⏳</div><div class="uo-text">Uploading...</div>';
+    
+    try {
+      // Upload ke Supabase
+      const publicUrl = await uploadImageToSupabase(file, type, idx);
+      
+      if (publicUrl) {
+        // Update tampilan
         if (type === 'hero') {
-          localStorage.setItem(STORAGE_KEYS.imgHero, data);
-          setImg('hero-img', 'hero-ph', data);
+          setImg('hero-img', 'hero-ph', publicUrl);
         } else if (type === 'about') {
-          localStorage.setItem(STORAGE_KEYS.imgAbout, data);
-          setImg('about-img', 'about-ph', data);
+          setImg('about-img', 'about-ph', publicUrl);
         } else if (type === 'proj') {
-          localStorage.setItem(STORAGE_KEYS.imgProj + idx, data);
           const cont = document.getElementById('pimg' + idx);
           let existing = cont.querySelector('img');
-
           if (existing) {
-            existing.src = data;
-            existing.style.display = '';
-            existing.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
+            existing.src = publicUrl;
           } else {
             const ph = cont.querySelector('.img-placeholder');
             if (ph) ph.remove();
             const ni = document.createElement('img');
-            ni.src = data;
+            ni.src = publicUrl;
             ni.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
             cont.insertBefore(ni, cont.firstChild);
           }
         }
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
+        
+        alert('✅ Foto berhasil diupload! Semua orang bisa melihatnya.');
+      }
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('❌ Gagal upload. Coba lagi.');
+    } finally {
+      // Reset overlay
+      const overlay = document.querySelector('.img-upload-overlay');
+      if (overlay) {
+        overlay.innerHTML = '<div class="uo-icon">📷</div><div class="uo-text">Klik untuk<br>upload foto</div>';
+      }
+    }
   };
 
   inp.click();
