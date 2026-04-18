@@ -1,12 +1,12 @@
-// js/supabase-client.js - SIMPLIFIED WORKING VERSION
+// js/supabase-client.js - FIXED VERSION (tanpa folder public)
 // GANTI DENGAN DATA DARI SUPABASE DASHBOARD KAMU!
-const SUPABASE_URL = 'https://zxcucuxsjahumskogxsv.supabase.co';  // ← GANTI! pastikan ada "supabase" bukan "subabase"
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4Y3VjdXhzamFodW1za29neHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzEyNTksImV4cCI6MjA5MjEwNzI1OX0.sZhTkwiX3WLzKsL4kdXuBcO1bZ1e9f4kLIV6xfBzGvw'; // ← GANTI! copy dari dashboard
+const SUPABASE_URL = 'https://zxcucuxsjahumskogxsv.supabase.co';  // ← GANTI! pastikan "supabase" bukan "subabase"
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4Y3VjdXhzamFodW1za29neHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzEyNTksImV4cCI6MjA5MjEwNzI1OX0.sZhTkwiX3WLzKsL4kdXuBcO1bZ1e9f4kLIV6xfBzGvw'; // ← GANTI!
 
 // Buat client
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Upload gambar
+// Upload gambar ke Supabase
 async function uploadImageToSupabase(file, type, index = null) {
   try {
     if (!file) {
@@ -19,15 +19,19 @@ async function uploadImageToSupabase(file, type, index = null) {
       return null;
     }
     
-    console.log('Starting upload...', { type, index, fileName: file.name });
+    console.log('Uploading...', { type, index, fileName: file.name });
     
-    // Buat nama file unik
-    const fileName = `${type}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${file.name.split('.').pop()}`;
+    // Buat nama file unik (langsung di root bucket, tanpa folder)
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${type}_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
     
-    // Upload ke Supabase Storage
+    // Upload ke Supabase Storage (langsung di root, tanpa folder)
     const { data, error } = await supabaseClient.storage
       .from('portfolio-images')
-      .upload(`public/${fileName}`, file);
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
     
     if (error) {
       console.error('Storage error:', error);
@@ -36,89 +40,86 @@ async function uploadImageToSupabase(file, type, index = null) {
     
     console.log('Upload success:', data);
     
-    // Dapatkan public URL
+    // Dapatkan public URL (langsung dari root)
     const { data: { publicUrl } } = supabaseClient.storage
       .from('portfolio-images')
-      .getPublicUrl(`public/${fileName}`);
+      .getPublicUrl(fileName);
     
     console.log('Public URL:', publicUrl);
     
-    // Update tampilan
+    // Update tampilan dan simpan ke localStorage
     if (type === 'hero') {
       localStorage.setItem('ptf_img_hero', publicUrl);
       setImg('hero-img', 'hero-ph', publicUrl);
+      alert('✅ Foto profil berhasil diupload!');
     } else if (type === 'about') {
       localStorage.setItem('ptf_img_about', publicUrl);
       setImg('about-img', 'about-ph', publicUrl);
+      alert('✅ Foto about berhasil diupload!');
     } else if (type === 'proj') {
       localStorage.setItem(`ptf_img_proj_${index}`, publicUrl);
       const cont = document.getElementById(`pimg${index}`);
       if (cont) {
-        const existingImg = cont.querySelector('img');
+        // Hapus placeholder jika ada
+        const placeholder = cont.querySelector('.img-placeholder');
+        if (placeholder) placeholder.remove();
+        
+        // Cek apakah sudah ada img
+        let existingImg = cont.querySelector('img');
         if (existingImg) {
           existingImg.src = publicUrl;
+          existingImg.style.display = 'block';
         } else {
-          const placeholder = cont.querySelector('.img-placeholder');
-          if (placeholder) placeholder.remove();
           const newImg = document.createElement('img');
           newImg.src = publicUrl;
           newImg.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
           cont.insertBefore(newImg, cont.firstChild);
         }
       }
+      alert('✅ Foto proyek berhasil diupload!');
     }
     
-    alert('✅ Foto berhasil diupload!');
     return publicUrl;
     
   } catch (error) {
     console.error('Upload error:', error);
-    alert('❌ Gagal upload: ' + error.message);
+    alert('❌ Gagal upload: ' + (error.message || 'Coba lagi nanti'));
     return null;
   }
 }
 
-// Load gambar dari Supabase
+// Load gambar dari Supabase (dari localStorage)
 async function loadImagesFromSupabase() {
   try {
-    console.log('Testing connection to Supabase...');
+    console.log('Loading images from localStorage...');
     
-    // Test connection dulu
-    const { data: testData, error: testError } = await supabaseClient.storage
-      .from('portfolio-images')
-      .list('public');
-    
-    if (testError) {
-      console.error('Connection test failed:', testError);
-      return;
-    }
-    
-    console.log('Connection OK!');
-    
-    // Load gambar untuk hero
+    // Load gambar hero
     const heroUrl = localStorage.getItem('ptf_img_hero');
-    if (heroUrl && heroUrl.includes('supabase')) {
+    if (heroUrl && (heroUrl.includes('supabase') || heroUrl.startsWith('data:'))) {
       setImg('hero-img', 'hero-ph', heroUrl);
+      console.log('Hero image loaded');
     }
     
-    // Load gambar untuk about
+    // Load gambar about
     const aboutUrl = localStorage.getItem('ptf_img_about');
-    if (aboutUrl && aboutUrl.includes('supabase')) {
+    if (aboutUrl && (aboutUrl.includes('supabase') || aboutUrl.startsWith('data:'))) {
       setImg('about-img', 'about-ph', aboutUrl);
+      console.log('About image loaded');
     }
     
-    // Load gambar untuk projects
+    // Load gambar projects
     for (let i = 0; i < 6; i++) {
       const projUrl = localStorage.getItem(`ptf_img_proj_${i}`);
-      if (projUrl && projUrl.includes('supabase')) {
+      if (projUrl && (projUrl.includes('supabase') || projUrl.startsWith('data:'))) {
         const cont = document.getElementById(`pimg${i}`);
         if (cont) {
-          const existingImg = cont.querySelector('img');
+          const placeholder = cont.querySelector('.img-placeholder');
+          if (placeholder) placeholder.remove();
+          
+          let existingImg = cont.querySelector('img');
           if (existingImg) {
             existingImg.src = projUrl;
           } else {
-            const placeholder = cont.querySelector('.img-placeholder');
-            if (placeholder) placeholder.remove();
             const newImg = document.createElement('img');
             newImg.src = projUrl;
             newImg.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
@@ -128,11 +129,13 @@ async function loadImagesFromSupabase() {
       }
     }
     
+    console.log('All images loaded');
+    
   } catch (error) {
-    console.error('Load error:', error);
+    console.error('Load images error:', error);
   }
 }
 
-// Export
+// Export ke global scope
 window.uploadImageToSupabase = uploadImageToSupabase;
 window.loadImagesFromSupabase = loadImagesFromSupabase;
