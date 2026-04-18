@@ -1,7 +1,7 @@
 // js/supabase-client.js
 // GANTI DENGAN DATA DARI SUPABASE DASHBOARD KAMU!
-const SUPABASE_URL = 'https://xxxxx.supabase.co';  // ← GANTI INI
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // ← GANTI INI
+const SUPABASE_URL = 'https://zxcucuxsjahumskogxsv.supabase.co';  // ← GANTI INI
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4Y3VjdXhzamFodW1za29neHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1MzEyNTksImV4cCI6MjA5MjEwNzI1OX0.sZhTkwiX3WLzKsL4kdXuBcO1bZ1e9f4kLIV6xfBzGvw'; // ← GANTI INI
 
 // Inisialisasi Supabase
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
