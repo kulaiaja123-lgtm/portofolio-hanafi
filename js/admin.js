@@ -3,7 +3,7 @@
    Image upload, save data, edit modal
 ════════════════════════════════════════════ */
 
-// Image upload handler - VERSION WITH SUPABASE
+// Image upload handler - SUPABASE VERSION
 async function uploadImg(type, idx) {
   if (!isAdmin) return;
 
@@ -14,48 +14,15 @@ async function uploadImg(type, idx) {
   inp.onchange = async e => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Tampilkan loading
-    const btn = document.querySelector('.img-upload-overlay');
-    if (btn) btn.innerHTML = '<div class="uo-icon">⏳</div><div class="uo-text">Uploading...</div>';
     
-    try {
-      // Upload ke Supabase
-      const publicUrl = await uploadImageToSupabase(file, type, idx);
-      
-      if (publicUrl) {
-        // Update tampilan
-        if (type === 'hero') {
-          setImg('hero-img', 'hero-ph', publicUrl);
-        } else if (type === 'about') {
-          setImg('about-img', 'about-ph', publicUrl);
-        } else if (type === 'proj') {
-          const cont = document.getElementById('pimg' + idx);
-          let existing = cont.querySelector('img');
-          if (existing) {
-            existing.src = publicUrl;
-          } else {
-            const ph = cont.querySelector('.img-placeholder');
-            if (ph) ph.remove();
-            const ni = document.createElement('img');
-            ni.src = publicUrl;
-            ni.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
-            cont.insertBefore(ni, cont.firstChild);
-          }
-        }
-        
-        alert('✅ Foto berhasil diupload! Semua orang bisa melihatnya.');
-      }
-    } catch (error) {
-      console.error('Upload failed:', error);
-      alert('❌ Gagal upload. Coba lagi.');
-    } finally {
-      // Reset overlay
-      const overlay = document.querySelector('.img-upload-overlay');
-      if (overlay) {
-        overlay.innerHTML = '<div class="uo-icon">📷</div><div class="uo-text">Klik untuk<br>upload foto</div>';
-      }
+    // Cek ukuran file (maks 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('❌ Ukuran file terlalu besar! Maksimal 2MB.');
+      return;
     }
+    
+    // Upload ke Supabase
+    await uploadImageToSupabase(file, type, idx);
   };
 
   inp.click();
