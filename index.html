@@ -235,33 +235,29 @@
      JAVASCRIPT FILES
 ════════════════════════════════════════════ -->
   <!-- Supabase Client -->
-<script type="module">
-  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-  
-  window.SUPABASE_URL = 'https://jilnzwviowxfccicgthr.supabase.co';  // GANTI!
-  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppbG56d3Zpb3d4ZmNjaWNndGhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NDA0OTUsImV4cCI6MjA5MjExNjQ5NX0.n2BrR9No4Efjie7qK7I_cdtP1jQSnZJbsMlLe37nE-4'; // GANTI!
-  
-  window.supabase = createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
-  
-  // Load images saat halaman dimuat
-  window.addEventListener('DOMContentLoaded', async () => {
-    // Load dari Supabase dulu
-    await loadImagesFromSupabase();
+<!-- Supabase JS Library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- Supabase Client (custom) -->
+<script src="js/supabase-client.js"></script>
+
+<!-- Core Scripts -->
+<script src="js/config.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/main.js"></script>
+
+<!-- Load images from Supabase after page loads -->
+<script>
+  window.addEventListener('DOMContentLoaded', function() {
+    // Tunggu render selesai, lalu load dari Supabase
+    setTimeout(() => {
+      if (typeof loadImagesFromSupabase === 'function') {
+        loadImagesFromSupabase();
+      }
+    }, 500);
   });
 </script>
-
-<!-- Script yang sudah ada -->
-<script src="js/config.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/supabase-client.js"></script>  <!-- Tambahkan ini -->
-<script src="js/admin.js"></script>
-<script src="js/main.js"></script>
-<script src="js/config.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/admin.js"></script>
-<script src="js/main.js"></script>
-
 </body>
 </html>
