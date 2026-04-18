@@ -1,23 +1,27 @@
 // js/supabase-client.js
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+// GANTI DENGAN DATA DARI SUPABASE DASHBOARD KAMU!
+const SUPABASE_URL = 'https://xxxxx.supabase.co';  // ← GANTI INI
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'; // ← GANTI INI
 
-// GANTI dengan data dari dashboard Supabase kamu!
-const SUPABASE_URL = 'https://jilnzwviowxfccicgthr.supabase.co';  // ← ganti ini
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppbG56d3Zpb3d4ZmNjaWNndGhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY1NDA0OTUsImV4cCI6MjA5MjExNjQ5NX0.n2BrR9No4Efjie7qK7I_cdtP1jQSnZJbsMlLe37nE-4
-'; // ← ganti ini
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Inisialisasi Supabase
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Upload gambar ke Supabase
 async function uploadImageToSupabase(file, type, index = null) {
   try {
+    // Tampilkan loading
+    const overlay = document.querySelector('.img-upload-overlay');
+    if (overlay) {
+      overlay.innerHTML = '<div class="uo-icon">⏳</div><div class="uo-text">Uploading...</div>';
+    }
+    
     // Buat nama file unik
     const fileExt = file.name.split('.').pop();
     const fileName = `${type}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
     const filePath = `public/${fileName}`;
     
     // Upload ke Supabase Storage
-    const { data, error } = await supabase.storage
+    const { data, error } = await supabaseClient.storage
       .from('portfolio-images')
       .upload(filePath, file, {
         cacheControl: '3600',
@@ -27,64 +31,81 @@ async function uploadImageToSupabase(file, type, index = null) {
     if (error) throw error;
     
     // Dapatkan public URL
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = supabaseClient.storage
       .from('portfolio-images')
       .getPublicUrl(filePath);
     
-    // Simpan URL ke localStorage juga sebagai cache
+    // Simpan URL ke database
+    await saveImageToDatabase(type, publicUrl, index);
+    
+    // Update tampilan
     if (type === 'hero') {
-      localStorage.setItem(STORAGE_KEYS.imgHero, publicUrl);
-      localStorage.setItem('supabase_hero', publicUrl);
+      setImg('hero-img', 'hero-ph', publicUrl);
     } else if (type === 'about') {
-      localStorage.setItem(STORAGE_KEYS.imgAbout, publicUrl);
-      localStorage.setItem('supabase_about', publicUrl);
+      setImg('about-img', 'about-ph', publicUrl);
     } else if (type === 'proj') {
-      localStorage.setItem(STORAGE_KEYS.imgProj + index, publicUrl);
-      localStorage.setItem(`supabase_proj_${index}`, publicUrl);
+      const cont = document.getElementById('pimg' + index);
+      if (cont) {
+        let existing = cont.querySelector('img');
+        if (existing) {
+          existing.src = publicUrl;
+        } else {
+          const ph = cont.querySelector('.img-placeholder');
+          if (ph) ph.remove();
+          const ni = document.createElement('img');
+          ni.src = publicUrl;
+          ni.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
+          cont.insertBefore(ni, cont.firstChild);
+        }
+      }
     }
     
-    // Simpan daftar file yang sudah diupload ke Supabase (opsional)
-    await saveImageRecord(type, publicUrl, index);
-    
+    alert('✅ Foto berhasil diupload! Semua orang bisa melihatnya.');
     return publicUrl;
+    
   } catch (error) {
-    console.error('Error uploading:', error);
-    alert('Gagal upload: ' + error.message);
+    console.error('Upload error:', error);
+    alert('❌ Gagal upload: ' + error.message);
     return null;
+  } finally {
+    // Reset overlay
+    const overlay = document.querySelector('.img-upload-overlay');
+    if (overlay) {
+      overlay.innerHTML = '<div class="uo-icon">📷</div><div class="uo-text">Klik untuk<br>upload foto</div>';
+    }
   }
 }
 
-// Simpan record gambar ke database Supabase
-async function saveImageRecord(type, url, index) {
-  const { data, error } = await supabase
+// Simpan URL ke database
+async function saveImageToDatabase(type, url, index) {
+  const { data, error } = await supabaseClient
     .from('images')
     .upsert({
       type: type,
       index: index,
       url: url,
       updated_at: new Date().toISOString()
-    });
+    }, { onConflict: 'type, index' });
   
-  if (error) console.error('Error saving record:', error);
+  if (error) console.error('Database error:', error);
 }
 
 // Load semua gambar dari Supabase
 async function loadImagesFromSupabase() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('images')
       .select('*');
     
     if (error) throw error;
     
-    if (data) {
+    if (data && data.length > 0) {
       data.forEach(record => {
         if (record.type === 'hero') {
           setImg('hero-img', 'hero-ph', record.url);
         } else if (record.type === 'about') {
           setImg('about-img', 'about-ph', record.url);
         } else if (record.type === 'proj' && record.index !== null) {
-          // Update gambar proyek
           const cont = document.getElementById(`pimg${record.index}`);
           if (cont) {
             let existing = cont.querySelector('img');
@@ -103,10 +124,10 @@ async function loadImagesFromSupabase() {
       });
     }
   } catch (error) {
-    console.error('Error loading images:', error);
+    console.error('Load images error:', error);
   }
 }
 
-// Export functions
+// Export ke global scope
 window.uploadImageToSupabase = uploadImageToSupabase;
 window.loadImagesFromSupabase = loadImagesFromSupabase;
