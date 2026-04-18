@@ -78,6 +78,10 @@ function render() {
 
   setupFade();
   setupNav();
+   // Load images from Supabase after render
+if (typeof loadImagesFromSupabase === 'function') {
+  loadImagesFromSupabase();
+}
 }
 
 // Initialize on DOM ready
